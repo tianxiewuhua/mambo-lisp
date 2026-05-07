@@ -1,15 +1,17 @@
 #include "mambo/Basic/Parser.h"
 #include "mambo/Basic/Ast.h"
-#include "mambo/Basic/Lex.h"
+#include "mambo/Basic/TokenKinds.h"
 #include "llvm/ADT/StringRef.h"
 #include <vector>
 
+using namespace mambo;
+
 SExprParser::SExprParser(Lexer &Lex) : Lex(Lex) { nextToken(); }
 
-void SExprParser::nextToken() { Lex.next(CurTok); }
+void SExprParser::nextToken() { Lex.read(CurTok); }
 
 std::unique_ptr<NumberExpr> SExprParser::parseNumber() {
-  if (CurTok.getKind() != Token::number) {
+  if (CurTok.getKind() != tok::number_literal) {
     // TODO: error
     return nullptr;
   }
@@ -20,17 +22,18 @@ std::unique_ptr<NumberExpr> SExprParser::parseNumber() {
 }
 
 std::unique_ptr<StringExpr> SExprParser::parseString() {
-  if (CurTok.getKind() != Token::str) {
+  if (CurTok.getKind() != tok::string_literal) {
     // TODO: error
     return nullptr;
   }
+  std::string Val = CurTok.getText().str();
 
   nextToken();
-  return std::make_unique<StringExpr>(CurTok.getText().str());
+  return std::make_unique<StringExpr>(Val);
 }
 
 std::unique_ptr<FunctionDefineExpr> SExprParser::parseFunctionDefine() {
-  if (CurTok.getKind() != Token::defun) {
+  if (CurTok.getKind() != tok::kw_defun) {
     // TODO: error
     return nullptr;
   }
@@ -51,26 +54,26 @@ std::unique_ptr<FunctionDefineExpr> SExprParser::parseFunctionDefine() {
 }
 
 std::unique_ptr<FunctionPrototype> SExprParser::parseFunctionPrototype() {
-  if (CurTok.getKind() != Token::symbol) {
+  if (CurTok.getKind() != tok::symbol) {
     // TODO: error
     return nullptr;
   }
   llvm::StringRef NameRef = CurTok.getText();
 
   nextToken();
-  if (CurTok.getKind() != Token::lp) {
+  if (CurTok.getKind() != tok::l_paren) {
     // TODO: error
     return nullptr;
   }
 
   nextToken();
   std::vector<std::string> params;
-  while (CurTok.getKind() == Token::symbol) {
+  while (CurTok.getKind() == tok::symbol) {
     params.push_back(CurTok.getText().str());
     nextToken();
   }
 
-  if (CurTok.getKind() != Token::rp) {
+  if (CurTok.getKind() != tok::r_paren) {
     // TODO: error
     return nullptr;
   }
@@ -80,7 +83,7 @@ std::unique_ptr<FunctionPrototype> SExprParser::parseFunctionPrototype() {
 }
 
 std::unique_ptr<FunctionCallExpr> SExprParser::parseFunctionCall() {
-  if (CurTok.getKind() != Token::symbol) {
+  if (CurTok.getKind() != tok::symbol) {
     // TODO: error
     return nullptr;
   }
@@ -89,7 +92,7 @@ std::unique_ptr<FunctionCallExpr> SExprParser::parseFunctionCall() {
   nextToken();
 
   std::vector<std::unique_ptr<SExpr>> params;
-  while (CurTok.getKind() != Token::rp) {
+  while (CurTok.getKind() != tok::r_paren) {
     std::unique_ptr<SExpr> param = parseSExpr();
     if (!param) {
       // TODO: error
@@ -104,20 +107,20 @@ std::unique_ptr<FunctionCallExpr> SExprParser::parseFunctionCall() {
 }
 
 std::unique_ptr<SExpr> SExprParser::parseSExpr() {
-  if (CurTok.getKind() == Token::eoi) {
+  if (CurTok.getKind() == tok::eof) {
     // finish
     return nullptr;
   }
 
-  if (CurTok.getKind() == Token::number) {
+  if (CurTok.getKind() == tok::number_literal) {
     return parseNumber();
   }
 
-  if (CurTok.getKind() == Token::str) {
+  if (CurTok.getKind() == tok::string_literal) {
     return parseString();
   }
 
-  if (CurTok.getKind() != Token::lp) {
+  if (CurTok.getKind() != tok::l_paren) {
     // TODO: error
     return nullptr;
   }
@@ -125,10 +128,10 @@ std::unique_ptr<SExpr> SExprParser::parseSExpr() {
   nextToken();
 
   switch (CurTok.getKind()) {
-  case Token::defun:
+  case tok::kw_defun:
     return parseFunctionDefine();
     break;
-  case Token::symbol:
+  case tok::symbol:
     return parseFunctionCall();
   default:
     // TODO: error

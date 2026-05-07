@@ -17,8 +17,8 @@ private:
   std::vector<std::unique_ptr<SExpr>> SExprs;
 
 public:
-  TransitionUnit(std::vector<std::unique_ptr<SExpr>> Sexprs)
-      : SExprs(std::move(Sexprs)) {}
+  TransitionUnit(std::vector<std::unique_ptr<SExpr>> SExprs)
+      : SExprs(std::move(SExprs)) {}
 
   std::vector<llvm::Value *> codegen(llvm::Module &M, llvm::IRBuilder<> &B);
 };
@@ -47,18 +47,20 @@ public:
 };
 
 class StringExpr : public SExpr {
-public:
+private:
   std::string Val;
 
+public:
   StringExpr(const std::string Val) : Val(Val) {}
 
   virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
 
 class VarExpr : public SExpr {
-public:
+private:
   std::string Name;
 
+public:
   VarExpr(const std::string Name) : Name(Name) {}
 
   virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
