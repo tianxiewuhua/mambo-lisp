@@ -26,6 +26,10 @@ void KeywordsMgr::initKeywords() {
 #include "mambo/Basic/TokenKinds.def"
 }
 
+void KeywordsMgr::addKeyword(llvm::StringRef K, tok::TokenKind Kind) {
+  KeywordsMap.insert(std::pair<llvm::StringRef, tok::TokenKind>(K, Kind));
+}
+
 void Lexer::validateDelimiter(size_t offset) {
   const char *checkPtr = BufferPtr + offset;
 

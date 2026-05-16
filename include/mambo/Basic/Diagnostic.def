@@ -5,5 +5,6 @@
 DIAG(err_symbol_not_found, Error, "symbol {0} not found")
 DIAG(err_expect_space, Error, "expected space not found")
 DIAG(err_unterminated_string, Error, "missing terminating character")
+DIAG(err_symbol_duplicated, Error, "symbol {0} is duplicated")
 
 #undef DIAG

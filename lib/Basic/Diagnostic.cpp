@@ -23,6 +23,6 @@ DiagnosticEngine::getDiagnosticKind(unsigned int DiagID) {
   return llvm::SourceMgr::DK_Error;
 }
 
-const char *DiagnosticEngine::getDiagnositicText(unsigned int DiagID) {
+const char *DiagnosticEngine::getDiagnosticText(unsigned int DiagID) {
   return DiagnosticText[DiagID];
 }

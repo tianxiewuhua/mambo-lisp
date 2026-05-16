@@ -1,12 +1,16 @@
 #include "mambo/Basic/Parser.h"
 #include "mambo/Basic/Ast.h"
 #include "mambo/Basic/TokenKinds.h"
+#include "mambo/CodeGen/CodeGen.h"
 #include "llvm/ADT/StringRef.h"
 #include <vector>
 
 using namespace mambo;
 
-SExprParser::SExprParser(Lexer &Lex) : Lex(Lex) { nextToken(); }
+SExprParser::SExprParser(Lexer &Lex, Sema &SemaAction)
+    : Lex(Lex), SemaAction(SemaAction) {
+  nextToken();
+}
 
 void SExprParser::nextToken() { Lex.read(CurTok); }
 
@@ -18,7 +22,7 @@ std::unique_ptr<NumberExpr> SExprParser::parseNumber() {
 
   double Val = strtod(CurTok.getText().str().c_str(), NULL);
   nextToken();
-  return std::make_unique<NumberExpr>(Val);
+  return std::make_unique<NumberExpr>(Val, Lex.getLoc());
 }
 
 std::unique_ptr<StringExpr> SExprParser::parseString() {
@@ -29,7 +33,7 @@ std::unique_ptr<StringExpr> SExprParser::parseString() {
   std::string Val = CurTok.getText().str();
 
   nextToken();
-  return std::make_unique<StringExpr>(Val);
+  return std::make_unique<StringExpr>(Val, Lex.getLoc());
 }
 
 std::unique_ptr<FunctionDefineExpr> SExprParser::parseFunctionDefine() {
@@ -49,8 +53,8 @@ std::unique_ptr<FunctionDefineExpr> SExprParser::parseFunctionDefine() {
     return nullptr;
   }
 
-  return std::make_unique<FunctionDefineExpr>(std::move(Proto),
-                                              std::move(Body));
+  return std::make_unique<FunctionDefineExpr>(std::move(Proto), std::move(Body),
+                                              Lex.getLoc());
 }
 
 std::unique_ptr<FunctionPrototype> SExprParser::parseFunctionPrototype() {
@@ -103,12 +107,27 @@ std::unique_ptr<FunctionCallExpr> SExprParser::parseFunctionCall() {
   }
 
   nextToken();
-  return std::make_unique<FunctionCallExpr>(CalleeRef.str(), std::move(params));
+  return std::make_unique<FunctionCallExpr>(CalleeRef.str(), std::move(params),
+                                            Lex.getLoc());
+}
+
+std::unique_ptr<VarDefExpr> SExprParser::parseGlobalVarDef() {
+  if (CurTok.getKind() != tok::kw_defvar) {
+    // TODO: error
+    return nullptr;
+  }
+
+  nextToken();
+  llvm::StringRef VarName = CurTok.getText();
+  nextToken();
+  std::unique_ptr<SExpr> Val = parseSExpr();
+
+  return SemaAction.actOnGlobalVarDef(VarName, std::move(Val), Lex.getLoc());
 }
 
 std::unique_ptr<SExpr> SExprParser::parseSExpr() {
   if (CurTok.getKind() == tok::eof) {
-    // finish
+    // end of file
     return nullptr;
   }
 

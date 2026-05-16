@@ -39,7 +39,6 @@ private:
   DiagnosticEngine &DE;
   KeywordsMgr KMgr;
 
-  llvm::SMLoc getLoc() { return llvm::SMLoc::getFromPointer(BufferPtr); }
   void validateDelimiter(size_t offset = 0);
 
 public:
@@ -53,6 +52,7 @@ public:
 
   void read(Token &tok);
   DiagnosticEngine &getDiagnostic() { return DE; }
+  llvm::SMLoc getLoc() { return llvm::SMLoc::getFromPointer(BufferPtr); }
 };
 
 } // namespace mambo

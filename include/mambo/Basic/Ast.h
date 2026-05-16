@@ -1,15 +1,21 @@
 #ifndef AST_H
 #define AST_H
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Value.h"
-#include <string>
-#include <vector>
+#include "llvm/Support/SMLoc.h"
 
 class SExpr {
+private:
+  llvm::SMLoc Loc;
+
 public:
+  SExpr(llvm::SMLoc Loc) : Loc(Loc) {}
   virtual ~SExpr() = default;
+
   virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) = 0;
+  llvm::SMLoc getLocation() { return Loc; }
 };
 
 class TransitionUnit {
@@ -23,6 +29,27 @@ public:
   std::vector<llvm::Value *> codegen(llvm::Module &M, llvm::IRBuilder<> &B);
 };
 
+class VarDefExpr : public SExpr {
+public:
+  enum VarDefKind { Dynamic, Lexical };
+
+private:
+  const VarDefKind Kind;
+
+  llvm::StringRef Name;
+  std::unique_ptr<SExpr> Val;
+
+public:
+  VarDefExpr(VarDefKind Kind, llvm::StringRef Name, std::unique_ptr<SExpr> Val,
+             llvm::SMLoc Loc)
+      : SExpr(Loc), Kind(Kind), Name(Name), Val(std::move(Val)) {}
+
+  VarDefKind getKind() { return Kind; }
+  llvm::StringRef getName() { return Name; }
+
+  llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
+};
+
 class FunctionCallExpr : public SExpr {
 private:
   std::string Callee;
@@ -30,8 +57,8 @@ private:
 
 public:
   FunctionCallExpr(const std::string Callee,
-                   std::vector<std::unique_ptr<SExpr>> Args)
-      : Callee(Callee), Args(std::move(Args)) {};
+                   std::vector<std::unique_ptr<SExpr>> Args, llvm::SMLoc Loc)
+      : SExpr(Loc), Callee(Callee), Args(std::move(Args)) {};
 
   virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
@@ -41,7 +68,7 @@ private:
   double Val;
 
 public:
-  NumberExpr(double Val) : Val(Val) {}
+  NumberExpr(double Val, llvm::SMLoc Loc) : SExpr(Loc), Val(Val) {}
 
   virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
@@ -51,7 +78,7 @@ private:
   std::string Val;
 
 public:
-  StringExpr(const std::string Val) : Val(Val) {}
+  StringExpr(const std::string Val, llvm::SMLoc Loc) : SExpr(Loc), Val(Val) {}
 
   virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
@@ -61,7 +88,7 @@ private:
   std::string Name;
 
 public:
-  VarExpr(const std::string Name) : Name(Name) {}
+  VarExpr(const std::string Name, llvm::SMLoc Loc) : SExpr(Loc), Name(Name) {}
 
   virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
@@ -85,8 +112,8 @@ private:
 
 public:
   FunctionDefineExpr(std::unique_ptr<FunctionPrototype> Proto,
-                     std::unique_ptr<SExpr> Body)
-      : Proto(std::move(Proto)), Body(std::move(Body)) {};
+                     std::unique_ptr<SExpr> Body, llvm::SMLoc Loc)
+      : SExpr(Loc), Proto(std::move(Proto)), Body(std::move(Body)) {};
 
   virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
