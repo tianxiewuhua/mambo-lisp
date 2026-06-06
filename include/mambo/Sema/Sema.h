@@ -6,6 +6,7 @@
 #include "mambo/Sema/Scope.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/SMLoc.h"
+#include <memory>
 
 namespace mambo {
 
@@ -17,11 +18,17 @@ private:
 public:
   Sema(DiagnosticEngine &DE) : DE(DE) {}
 
-  std::unique_ptr<VarDefExpr> actOnGlobalVarDef(llvm::StringRef VarName,
-                                                std::unique_ptr<SExpr> Val,
-                                                llvm::SMLoc Loc);
+  std::unique_ptr<VarDefExpr> actOnDynamicVarDef(llvm::StringRef VarName,
+                                                 std::unique_ptr<SExpr> Val,
+                                                 llvm::SMLoc Loc);
+  std::unique_ptr<LetBindingsExpr>
+  actOnLetBindings(std::unique_ptr<LetBindingsExpr> LetBinding,
+                   std::vector<VarDefExpr *> Vars);
+  std::unique_ptr<FunctionDefineExpr>
+  actOnFunctionDef(std::unique_ptr<FunctionPrototype> Proto,
+                   std::unique_ptr<SExpr> Body, llvm::SMLoc Loc);
 
-  void enterScope(SExpr &SExpr);
+  void enterScope(SExpr *SExpr);
   void leaveScope();
 };
 
@@ -30,7 +37,7 @@ private:
   Sema &S;
 
 public:
-  EnterDeclScope(Sema &Sema, SExpr &SExpr) : S(Sema) { S.enterScope(SExpr); }
+  EnterDeclScope(Sema &Sema, SExpr *SExpr) : S(Sema) { S.enterScope(SExpr); }
 
   ~EnterDeclScope() { S.leaveScope(); }
 };

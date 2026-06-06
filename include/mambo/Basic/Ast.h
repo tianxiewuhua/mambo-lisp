@@ -50,6 +50,25 @@ public:
   llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
 
+class LetBindingsExpr : public SExpr {
+private:
+  std::vector<std::unique_ptr<VarDefExpr>> VarBindings;
+  std::vector<std::unique_ptr<SExpr>> LetExprs;
+
+public:
+  LetBindingsExpr(llvm::SMLoc Loc) : SExpr(Loc) {}
+
+  void setVarBindings(std::vector<std::unique_ptr<VarDefExpr>> VarBindings) {
+    this->VarBindings = std::move(VarBindings);
+  }
+
+  void setLetExprs(std::vector<std::unique_ptr<SExpr>> LetExprs) {
+    this->LetExprs = std::move(LetExprs);
+  }
+
+  llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
+};
+
 class FunctionCallExpr : public SExpr {
 private:
   std::string Callee;

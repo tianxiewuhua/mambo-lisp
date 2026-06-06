@@ -2,6 +2,7 @@
 #define MAMBO_PARSER_H
 
 #include "mambo/Basic/Ast.h"
+#include "mambo/Basic/TokenKinds.h"
 #include "mambo/Lex/Lexer.h"
 #include "mambo/Sema/Sema.h"
 #include <memory>
@@ -19,12 +20,16 @@ private:
   std::unique_ptr<FunctionPrototype> parseFunctionPrototype();
   std::unique_ptr<FunctionDefineExpr> parseFunctionDefine();
   std::unique_ptr<FunctionCallExpr> parseFunctionCall();
-  std::unique_ptr<VarDefExpr> parseGlobalVarDef();
+  VarDefExpr *parseLexicalVarDef();
+  std::unique_ptr<LetBindingsExpr> parseLetBinding();
+  std::unique_ptr<VarDefExpr> parseDynamicVarDef();
 
 public:
   SExprParser(Lexer &Lex, Sema &SemaAction);
 
   void nextToken();
+  bool consume(tok::TokenKind ExpectedKind);
+  bool expect(tok::TokenKind ExpectedKind);
   std::unique_ptr<SExpr> parseSExpr();
   std::unique_ptr<TransitionUnit> parseTransitionUnit();
 };

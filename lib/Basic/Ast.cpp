@@ -31,6 +31,11 @@ llvm::Value *VarDefExpr::codegen(llvm::Module &M, llvm::IRBuilder<> &B) {
   return nullptr;
 }
 
+llvm::Value *LetBindingsExpr::codegen(llvm::Module &M, llvm::IRBuilder<> &B) {
+  // TODO
+  return nullptr;
+}
+
 llvm::Value *NumberExpr::codegen(llvm::Module &M, llvm::IRBuilder<> &B) {
   return llvm::ConstantFP::get(M.getContext(), llvm::APFloat(Val));
 }
