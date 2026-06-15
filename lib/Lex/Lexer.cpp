@@ -21,13 +21,13 @@ LLVM_READNONE static bool _is_function_punct(char _c) {
   }
 }
 
-void KeywordsMgr::initKeywords() {
-#define KEYWORD(ID, FLAGS) addKeyword(llvm::StringRef(#ID), tok::kw_##ID);
+void KeywordsMgr::initSpecialOps() {
+#define SPECIALOP(ID, FLAGS) addSpecialOp(llvm::StringRef(#ID), tok::so_##ID);
 #include "mambo/Basic/TokenKinds.def"
 }
 
-void KeywordsMgr::addKeyword(llvm::StringRef K, tok::TokenKind Kind) {
-  KeywordsMap.insert(std::pair<llvm::StringRef, tok::TokenKind>(K, Kind));
+void KeywordsMgr::addSpecialOp(llvm::StringRef K, tok::TokenKind Kind) {
+  SpecialOpsMap.insert(std::pair<llvm::StringRef, tok::TokenKind>(K, Kind));
 }
 
 void Lexer::validateDelimiter(size_t offset) {
@@ -58,7 +58,7 @@ void Lexer::read(Token &Tok) {
     llvm::StringRef Name(BufferPtr, BufferEnd - BufferPtr);
 
     tok::TokenKind DefaultKind = tok::symbol;
-    Tok.Kind = KMgr.getKeyword(Name, DefaultKind);
+    Tok.Kind = KMgr.getSpecialOp(Name, DefaultKind);
     Tok.DataPtr = BufferPtr;
     Tok.Length = BufferEnd - BufferPtr;
 

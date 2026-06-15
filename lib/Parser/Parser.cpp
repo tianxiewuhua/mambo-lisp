@@ -1,7 +1,6 @@
 #include "mambo/Parser/Parser.h"
 #include "mambo/Basic/Ast.h"
 #include "mambo/Basic/TokenKinds.h"
-#include "mambo/CodeGen/CodeGen.h"
 #include "mambo/Sema/Sema.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/SMLoc.h"
@@ -86,7 +85,7 @@ std::unique_ptr<FunctionPrototype> SExprParser::parseFunctionPrototype() {
 }
 
 std::unique_ptr<FunctionDefineExpr> SExprParser::parseFunctionDefine() {
-  if (CurTok.getKind() != tok::kw_defun) {
+  if (CurTok.getKind() != tok::so_defun) {
     // TODO: error
     return nullptr;
   }
@@ -166,7 +165,7 @@ VarDefExpr *SExprParser::parseLexicalVarDef() {
 }
 
 std::unique_ptr<LetBindingsExpr> SExprParser::parseLetBinding() {
-  if (consume(tok::kw_let)) {
+  if (consume(tok::so_let)) {
     // TODO error
     return nullptr;
   }
@@ -222,7 +221,8 @@ std::unique_ptr<LetBindingsExpr> SExprParser::parseLetBinding() {
 }
 
 std::unique_ptr<VarDefExpr> SExprParser::parseDynamicVarDef() {
-  if (CurTok.getKind() != tok::kw_defvar) {
+  llvm::SMLoc CurLoc = Lex.getLoc();
+  if (CurTok.getKind() != tok::so_defvar) {
     // TODO: error
     return nullptr;
   }
@@ -232,24 +232,42 @@ std::unique_ptr<VarDefExpr> SExprParser::parseDynamicVarDef() {
   nextToken();
   std::unique_ptr<SExpr> Val = parseSExpr();
 
-  return SemaAction.actOnDynamicVarDef(VarName, std::move(Val), Lex.getLoc());
+  return SemaAction.actOnDynamicVarDef(VarName, std::move(Val), CurLoc);
+}
+
+std::unique_ptr<IfExpr> SExprParser::parseIf() {
+  llvm::SMLoc CurLoc = Lex.getLoc();
+
+  if (consume(tok::so_if)) {
+    // TODO: error
+    return nullptr;
+  }
+
+  std::unique_ptr<SExpr> TestExpr = parseSExpr();
+  std::unique_ptr<SExpr> ThenExpr = parseSExpr();
+  if (expect(tok::r_paren)) {
+    std::unique_ptr<SExpr> ElseExpr = parseSExpr();
+    return std::make_unique<IfExpr>(std::move(TestExpr), std::move(ThenExpr),
+                                    std::move(ElseExpr), CurLoc);
+  }
+
+  return std::make_unique<IfExpr>(std::move(TestExpr), std::move(ThenExpr),
+                                  nullptr, CurLoc);
 }
 
 std::unique_ptr<SExpr> SExprParser::parseSExpr() {
-  if (CurTok.getKind() == tok::eof) {
+  if (!expect(tok::eof)) {
     // end of file
     return nullptr;
   }
 
-  if (CurTok.getKind() == tok::number_literal) {
+  if (!expect(tok::number_literal))
     return parseNumber();
-  }
 
-  if (CurTok.getKind() == tok::string_literal) {
+  if (!expect(tok::string_literal))
     return parseString();
-  }
 
-  if (CurTok.getKind() == tok::symbol) {
+  if (!expect(tok::symbol)) {
     // TODO 获取符号本身
   }
 
@@ -259,15 +277,17 @@ std::unique_ptr<SExpr> SExprParser::parseSExpr() {
   }
 
   switch (CurTok.getKind()) {
-  case tok::kw_defun:
+  case tok::so_defun:
     return parseFunctionDefine();
     break;
   case tok::symbol:
     return parseFunctionCall();
-  case tok::kw_defvar:
+  case tok::so_defvar:
     return parseDynamicVarDef();
-  case tok::kw_let:
+  case tok::so_let:
     return parseLetBinding();
+  case tok::so_if:
+    return parseIf();
   default:
     // TODO: error
     return nullptr;

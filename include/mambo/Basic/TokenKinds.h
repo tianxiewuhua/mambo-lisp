@@ -13,7 +13,7 @@ enum TokenKind : unsigned short {
 };
 
 const char *getTokenName(TokenKind Kind) LLVM_READNONE;
-const char *getKeywordSpelling(TokenKind Kind) LLVM_READNONE;
+const char *getSpecialOperatorSpelling(TokenKind Kind) LLVM_READNONE;
 
 } // namespace tok
 } // namespace mambo

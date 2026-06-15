@@ -69,6 +69,22 @@ public:
   llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
 
+class IfExpr : public SExpr {
+private:
+  std::unique_ptr<SExpr> TestExpr;
+  std::unique_ptr<SExpr> ThenExpr;
+  std::unique_ptr<SExpr> ElseExpr;
+  // TODO else form
+
+public:
+  IfExpr(std::unique_ptr<SExpr> TestExpr, std::unique_ptr<SExpr> ThenExpr,
+         std::unique_ptr<SExpr> ElseExpr, llvm::SMLoc Loc)
+      : SExpr(Loc), TestExpr(std::move(TestExpr)),
+        ThenExpr(std::move(ThenExpr)), ElseExpr(std::move(ElseExpr)) {}
+
+  llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
+};
+
 class FunctionCallExpr : public SExpr {
 private:
   std::string Callee;

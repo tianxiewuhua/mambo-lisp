@@ -6,8 +6,8 @@
 #define PUNCTUATOR(ID, VAL) TOK(ID)
 #endif
 
-#ifndef KEYWORD
-#define KEYWORD(ID, FLAG) TOK(kw_ ## ID)
+#ifndef SPECIALOP
+#define SPECIALOP(ID, FLAG) TOK(so_ ## ID)
 #endif
 
 TOK(eof)
@@ -20,10 +20,11 @@ TOK(string_literal)
 PUNCTUATOR(l_paren, "(")
 PUNCTUATOR(r_paren, ")")
 
-KEYWORD(defun,  ALL)
-KEYWORD(defvar, ALL)
-KEYWORD(let,    ALL)
+SPECIALOP(defun,  ALL)
+SPECIALOP(defvar, ALL)
+SPECIALOP(let,    ALL)
+SPECIALOP(if,    ALL)
 
-#undef KEYWORD
+#undef SPECIALOP
 #undef PUNCTUATOR
 #undef TOK

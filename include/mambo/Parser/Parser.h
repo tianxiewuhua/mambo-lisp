@@ -23,6 +23,7 @@ private:
   VarDefExpr *parseLexicalVarDef();
   std::unique_ptr<LetBindingsExpr> parseLetBinding();
   std::unique_ptr<VarDefExpr> parseDynamicVarDef();
+  std::unique_ptr<IfExpr> parseIf();
 
 public:
   SExprParser(Lexer &Lex, Sema &SemaAction);

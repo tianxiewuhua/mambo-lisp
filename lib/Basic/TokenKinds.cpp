@@ -5,7 +5,7 @@ using namespace mambo;
 
 static const char *const TokNames[] = {
 #define TOK(ID) #ID,
-#define KEYWORD(ID, FLAG) #ID,
+#define SPECIALOP(ID, FLAG) #ID,
 #include "mambo/Basic/TokenKinds.def"
     nullptr};
 
@@ -18,10 +18,10 @@ const char *tok::getTokenName(TokenKind Kind) {
   return nullptr;
 }
 
-const char *tok::getKeywordSpelling(TokenKind Kind) {
+const char *tok::getSpecialOperatorSpelling(TokenKind Kind) {
   switch (Kind) {
-#define KEYWORD(ID, FLAG)                                                      \
-  case kw_##ID:                                                                \
+#define SPECIALOP(ID, FLAG)                                                    \
+  case so_##ID:                                                                \
     return #ID;
 #include "mambo/Basic/TokenKinds.def"
   default:

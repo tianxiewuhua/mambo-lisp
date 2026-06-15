@@ -13,17 +13,18 @@ namespace mambo {
 
 class KeywordsMgr {
 private:
-  llvm::StringMap<tok::TokenKind> KeywordsMap;
+  llvm::StringMap<tok::TokenKind> SpecialOpsMap;
 
-  void addKeyword(llvm::StringRef K, tok::TokenKind Kind);
+  void addSpecialOp(llvm::StringRef K, tok::TokenKind Kind);
 
 public:
-  void initKeywords();
+  void initSpecialOps();
 
-  tok::TokenKind getKeyword(llvm::StringRef Name,
-                            tok::TokenKind DefaultKind = tok::unknown) {
-    llvm::StringMapIterBase<tok::TokenKind, false> Rel = KeywordsMap.find(Name);
-    if (Rel != KeywordsMap.end()) {
+  tok::TokenKind getSpecialOp(llvm::StringRef Name,
+                              tok::TokenKind DefaultKind = tok::unknown) {
+    llvm::StringMapIterBase<tok::TokenKind, false> Rel =
+        SpecialOpsMap.find(Name);
+    if (Rel != SpecialOpsMap.end()) {
       return Rel->second;
     }
 
@@ -47,7 +48,7 @@ public:
     BufferStart = BufferPtr =
         SrcMgr.getMemoryBuffer(FileID)->getBuffer().begin();
 
-    KMgr.initKeywords();
+    KMgr.initSpecialOps();
   }
 
   void read(Token &tok);
