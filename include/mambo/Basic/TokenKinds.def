@@ -7,7 +7,7 @@
 #endif
 
 #ifndef SPECIALOP
-#define SPECIALOP(ID, FLAG) TOK(so_ ## ID)
+#define SPECIALOP(ID, FLAG) TOK(sop_ ## ID)
 #endif
 
 TOK(eof)

@@ -22,7 +22,7 @@ LLVM_READNONE static bool _is_function_punct(char _c) {
 }
 
 void KeywordsMgr::initSpecialOps() {
-#define SPECIALOP(ID, FLAGS) addSpecialOp(llvm::StringRef(#ID), tok::so_##ID);
+#define SPECIALOP(ID, FLAGS) addSpecialOp(llvm::StringRef(#ID), tok::sop_##ID);
 #include "mambo/Basic/TokenKinds.def"
 }
 

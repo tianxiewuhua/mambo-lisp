@@ -1,20 +1,31 @@
-#ifndef AST_H
-#define AST_H
+#ifndef MAMBO_AST_H
+#define MAMBO_AST_H
 
 #include "llvm/ADT/StringRef.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/Value.h"
 #include "llvm/Support/SMLoc.h"
 
 class SExpr {
+public:
+  enum SExprKind {
+    SK_VarDef,
+    SK_LetBindings,
+    SK_If,
+    SK_FunctionCall,
+    SK_FunctionDef,
+    SK_Number,
+    SK_Var,
+    SK_String
+  };
+
 private:
+  const SExprKind Kind;
   llvm::SMLoc Loc;
 
 public:
-  SExpr(llvm::SMLoc Loc) : Loc(Loc) {}
+  SExpr(SExprKind Kind, llvm::SMLoc Loc) : Kind(Kind), Loc(Loc) {}
   virtual ~SExpr() = default;
 
-  virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) = 0;
+  SExprKind getKind() const { return Kind; }
   llvm::SMLoc getLocation() { return Loc; }
 };
 
@@ -26,7 +37,7 @@ public:
   TransitionUnit(std::vector<std::unique_ptr<SExpr>> SExprs)
       : SExprs(std::move(SExprs)) {}
 
-  std::vector<llvm::Value *> codegen(llvm::Module &M, llvm::IRBuilder<> &B);
+  std::vector<std::unique_ptr<SExpr>> &getExprs() { return SExprs; };
 };
 
 class VarDefExpr : public SExpr {
@@ -40,14 +51,15 @@ private:
   std::unique_ptr<SExpr> Val;
 
 public:
-  VarDefExpr(VarDefKind Kind, llvm::StringRef Name, std::unique_ptr<SExpr> Val,
-             llvm::SMLoc Loc)
-      : SExpr(Loc), Kind(Kind), Name(Name), Val(std::move(Val)) {}
+  VarDefExpr(VarDefKind VarDefKind, llvm::StringRef Name,
+             std::unique_ptr<SExpr> Val, llvm::SMLoc Loc)
+      : SExpr(SK_VarDef, Loc), Kind(VarDefKind), Name(Name),
+        Val(std::move(Val)) {}
+
+  static bool classof(const SExpr *S) { return S->getKind() == SK_VarDef; }
 
   VarDefKind getKind() { return Kind; }
   llvm::StringRef getName() { return Name; }
-
-  llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
 
 class LetBindingsExpr : public SExpr {
@@ -56,7 +68,9 @@ private:
   std::vector<std::unique_ptr<SExpr>> LetExprs;
 
 public:
-  LetBindingsExpr(llvm::SMLoc Loc) : SExpr(Loc) {}
+  LetBindingsExpr(llvm::SMLoc Loc) : SExpr(SK_LetBindings, Loc) {}
+
+  static bool classof(const SExpr *S) { return S->getKind() == SK_LetBindings; }
 
   void setVarBindings(std::vector<std::unique_ptr<VarDefExpr>> VarBindings) {
     this->VarBindings = std::move(VarBindings);
@@ -65,8 +79,6 @@ public:
   void setLetExprs(std::vector<std::unique_ptr<SExpr>> LetExprs) {
     this->LetExprs = std::move(LetExprs);
   }
-
-  llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
 };
 
 class IfExpr : public SExpr {
@@ -79,10 +91,10 @@ private:
 public:
   IfExpr(std::unique_ptr<SExpr> TestExpr, std::unique_ptr<SExpr> ThenExpr,
          std::unique_ptr<SExpr> ElseExpr, llvm::SMLoc Loc)
-      : SExpr(Loc), TestExpr(std::move(TestExpr)),
+      : SExpr(SK_If, Loc), TestExpr(std::move(TestExpr)),
         ThenExpr(std::move(ThenExpr)), ElseExpr(std::move(ElseExpr)) {}
 
-  llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
+  static bool classof(const SExpr *S) { return S->getKind() == SK_If; }
 };
 
 class FunctionCallExpr : public SExpr {
@@ -93,9 +105,14 @@ private:
 public:
   FunctionCallExpr(const std::string Callee,
                    std::vector<std::unique_ptr<SExpr>> Args, llvm::SMLoc Loc)
-      : SExpr(Loc), Callee(Callee), Args(std::move(Args)) {};
+      : SExpr(SK_FunctionCall, Loc), Callee(Callee), Args(std::move(Args)) {};
 
-  virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
+  static bool classof(const SExpr *S) {
+    return S->getKind() == SK_FunctionCall;
+  }
+
+  std::string getCallee() { return Callee; }
+  std::vector<std::unique_ptr<SExpr>> &getArgs() { return Args; }
 };
 
 class NumberExpr : public SExpr {
@@ -103,9 +120,11 @@ private:
   double Val;
 
 public:
-  NumberExpr(double Val, llvm::SMLoc Loc) : SExpr(Loc), Val(Val) {}
+  NumberExpr(double Val, llvm::SMLoc Loc) : SExpr(SK_Number, Loc), Val(Val) {}
 
-  virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
+  static bool classof(const SExpr *S) { return S->getKind() == SK_Number; }
+
+  double getVal() { return Val; }
 };
 
 class StringExpr : public SExpr {
@@ -113,9 +132,12 @@ private:
   std::string Val;
 
 public:
-  StringExpr(const std::string Val, llvm::SMLoc Loc) : SExpr(Loc), Val(Val) {}
+  StringExpr(const std::string Val, llvm::SMLoc Loc)
+      : SExpr(SK_String, Loc), Val(Val) {}
 
-  virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
+  static bool classof(const SExpr *S) { return S->getKind() == SK_String; }
+
+  std::string getVal() { return Val; }
 };
 
 class VarExpr : public SExpr {
@@ -123,9 +145,10 @@ private:
   std::string Name;
 
 public:
-  VarExpr(const std::string Name, llvm::SMLoc Loc) : SExpr(Loc), Name(Name) {}
+  VarExpr(const std::string Name, llvm::SMLoc Loc)
+      : SExpr(SK_Var, Loc), Name(Name) {}
 
-  virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
+  static bool classof(const SExpr *S) { return S->getKind() == SK_Var; }
 };
 
 class FunctionPrototype {
@@ -137,7 +160,8 @@ public:
   FunctionPrototype(std::string Name, std::vector<std::string> Args)
       : Name(Name), Args(std::move(Args)) {};
 
-  llvm::Function *codegen(llvm::Module &M, llvm::IRBuilder<> &B);
+  std::string getName() { return Name; }
+  std::vector<std::string> &getArgs() { return Args; }
 };
 
 class FunctionDefineExpr : public SExpr {
@@ -148,9 +172,13 @@ private:
 public:
   FunctionDefineExpr(std::unique_ptr<FunctionPrototype> Proto,
                      std::unique_ptr<SExpr> Body, llvm::SMLoc Loc)
-      : SExpr(Loc), Proto(std::move(Proto)), Body(std::move(Body)) {};
+      : SExpr(SK_FunctionDef, Loc), Proto(std::move(Proto)),
+        Body(std::move(Body)) {};
 
-  virtual llvm::Value *codegen(llvm::Module &M, llvm::IRBuilder<> &B) override;
+  FunctionPrototype *getProto() { return Proto.get(); }
+  SExpr *getBody() { return Body.get(); }
+
+  static bool classof(const SExpr *S) { return S->getKind() == SK_FunctionDef; }
 };
 
 #endif

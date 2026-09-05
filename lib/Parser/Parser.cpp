@@ -69,9 +69,9 @@ std::unique_ptr<FunctionPrototype> SExprParser::parseFunctionPrototype() {
   }
 
   nextToken();
-  std::vector<std::string> params;
+  std::vector<std::string> Params;
   while (CurTok.getKind() == tok::symbol) {
-    params.push_back(CurTok.getText().str());
+    Params.push_back(CurTok.getText().str());
     nextToken();
   }
 
@@ -81,11 +81,11 @@ std::unique_ptr<FunctionPrototype> SExprParser::parseFunctionPrototype() {
   }
 
   nextToken();
-  return std::make_unique<FunctionPrototype>(NameRef.str(), params);
+  return std::make_unique<FunctionPrototype>(NameRef.str(), Params);
 }
 
 std::unique_ptr<FunctionDefineExpr> SExprParser::parseFunctionDefine() {
-  if (CurTok.getKind() != tok::so_defun) {
+  if (CurTok.getKind() != tok::sop_defun) {
     // TODO: error
     return nullptr;
   }
@@ -116,7 +116,7 @@ std::unique_ptr<FunctionCallExpr> SExprParser::parseFunctionCall() {
   llvm::StringRef CalleeRef = CurTok.getText();
   nextToken();
 
-  std::vector<std::unique_ptr<SExpr>> params;
+  std::vector<std::unique_ptr<SExpr>> Params;
   while (CurTok.getKind() != tok::r_paren) {
     std::unique_ptr<SExpr> param = parseSExpr();
     if (!param) {
@@ -124,11 +124,11 @@ std::unique_ptr<FunctionCallExpr> SExprParser::parseFunctionCall() {
       return nullptr;
     }
 
-    params.push_back(std::move(param));
+    Params.push_back(std::move(param));
   }
 
   nextToken();
-  return std::make_unique<FunctionCallExpr>(CalleeRef.str(), std::move(params),
+  return std::make_unique<FunctionCallExpr>(CalleeRef.str(), std::move(Params),
                                             Lex.getLoc());
 }
 
@@ -165,7 +165,7 @@ VarDefExpr *SExprParser::parseLexicalVarDef() {
 }
 
 std::unique_ptr<LetBindingsExpr> SExprParser::parseLetBinding() {
-  if (consume(tok::so_let)) {
+  if (consume(tok::sop_let)) {
     // TODO error
     return nullptr;
   }
@@ -222,7 +222,7 @@ std::unique_ptr<LetBindingsExpr> SExprParser::parseLetBinding() {
 
 std::unique_ptr<VarDefExpr> SExprParser::parseDynamicVarDef() {
   llvm::SMLoc CurLoc = Lex.getLoc();
-  if (CurTok.getKind() != tok::so_defvar) {
+  if (CurTok.getKind() != tok::sop_defvar) {
     // TODO: error
     return nullptr;
   }
@@ -238,7 +238,7 @@ std::unique_ptr<VarDefExpr> SExprParser::parseDynamicVarDef() {
 std::unique_ptr<IfExpr> SExprParser::parseIf() {
   llvm::SMLoc CurLoc = Lex.getLoc();
 
-  if (consume(tok::so_if)) {
+  if (consume(tok::sop_if)) {
     // TODO: error
     return nullptr;
   }
@@ -277,16 +277,16 @@ std::unique_ptr<SExpr> SExprParser::parseSExpr() {
   }
 
   switch (CurTok.getKind()) {
-  case tok::so_defun:
+  case tok::sop_defun:
     return parseFunctionDefine();
     break;
   case tok::symbol:
     return parseFunctionCall();
-  case tok::so_defvar:
+  case tok::sop_defvar:
     return parseDynamicVarDef();
-  case tok::so_let:
+  case tok::sop_let:
     return parseLetBinding();
-  case tok::so_if:
+  case tok::sop_if:
     return parseIf();
   default:
     // TODO: error

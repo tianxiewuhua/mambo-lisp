@@ -21,7 +21,7 @@ const char *tok::getTokenName(TokenKind Kind) {
 const char *tok::getSpecialOperatorSpelling(TokenKind Kind) {
   switch (Kind) {
 #define SPECIALOP(ID, FLAG)                                                    \
-  case so_##ID:                                                                \
+  case sop_##ID:                                                               \
     return #ID;
 #include "mambo/Basic/TokenKinds.def"
   default:
