@@ -1,5 +1,5 @@
-#ifndef MAMBO_SEMA_SCOPE
-#define MAMBO_SEMA_SCOPE
+#ifndef MAMBO_SEMA_SCOPE_H
+#define MAMBO_SEMA_SCOPE_H
 
 #include "mambo/Basic/Ast.h"
 #include "llvm/ADT/StringMap.h"

@@ -2,8 +2,8 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/SMLoc.h"
 
-#ifndef MAMBO_LEXER_TOKEN
-#define MAMBO_LEXER_TOKEN
+#ifndef MAMBO_LEXER_TOKEN_H
+#define MAMBO_LEXER_TOKEN_H
 
 namespace mambo {
 

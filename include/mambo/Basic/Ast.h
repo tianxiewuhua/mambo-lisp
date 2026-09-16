@@ -1,5 +1,5 @@
-#ifndef MAMBO_AST_H
-#define MAMBO_AST_H
+#ifndef MAMBO_BASIC_AST_H
+#define MAMBO_BASIC_AST_H
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/SMLoc.h"
@@ -83,18 +83,20 @@ public:
 
 class IfExpr : public SExpr {
 private:
-  std::unique_ptr<SExpr> TestExpr;
-  std::unique_ptr<SExpr> ThenExpr;
-  std::unique_ptr<SExpr> ElseExpr;
+  std::unique_ptr<SExpr> Cond, Then, Else;
   // TODO else form
 
 public:
-  IfExpr(std::unique_ptr<SExpr> TestExpr, std::unique_ptr<SExpr> ThenExpr,
-         std::unique_ptr<SExpr> ElseExpr, llvm::SMLoc Loc)
-      : SExpr(SK_If, Loc), TestExpr(std::move(TestExpr)),
-        ThenExpr(std::move(ThenExpr)), ElseExpr(std::move(ElseExpr)) {}
+  IfExpr(std::unique_ptr<SExpr> Cond, std::unique_ptr<SExpr> Then,
+         std::unique_ptr<SExpr> Else, llvm::SMLoc Loc)
+      : SExpr(SK_If, Loc), Cond(std::move(Cond)), Then(std::move(Then)),
+        Else(std::move(Else)) {}
 
   static bool classof(const SExpr *S) { return S->getKind() == SK_If; }
+
+  SExpr *getCond() { return Cond.get(); }
+  SExpr *getThen() { return Then.get(); }
+  SExpr *getElse() { return Else.get(); }
 };
 
 class FunctionCallExpr : public SExpr {

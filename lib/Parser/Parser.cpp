@@ -243,16 +243,16 @@ std::unique_ptr<IfExpr> SExprParser::parseIf() {
     return nullptr;
   }
 
-  std::unique_ptr<SExpr> TestExpr = parseSExpr();
-  std::unique_ptr<SExpr> ThenExpr = parseSExpr();
+  std::unique_ptr<SExpr> Cond = parseSExpr();
+  std::unique_ptr<SExpr> Then = parseSExpr();
   if (expect(tok::r_paren)) {
-    std::unique_ptr<SExpr> ElseExpr = parseSExpr();
-    return std::make_unique<IfExpr>(std::move(TestExpr), std::move(ThenExpr),
-                                    std::move(ElseExpr), CurLoc);
+    std::unique_ptr<SExpr> Else = parseSExpr();
+    return std::make_unique<IfExpr>(std::move(Cond), std::move(Then),
+                                    std::move(Else), CurLoc);
   }
 
-  return std::make_unique<IfExpr>(std::move(TestExpr), std::move(ThenExpr),
-                                  nullptr, CurLoc);
+  return std::make_unique<IfExpr>(std::move(Cond), std::move(Then), nullptr,
+                                  CurLoc);
 }
 
 std::unique_ptr<SExpr> SExprParser::parseSExpr() {
