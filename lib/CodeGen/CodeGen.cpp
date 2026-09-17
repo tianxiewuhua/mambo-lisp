@@ -202,6 +202,8 @@ llvm::Value *CodeGenFunctions::EmitIfExpr(IfExpr *IF) {
 
   // create an unconditional br to continue block for else;
   Builder.CreateBr(ContBB);
+  // same to ThenBB
+  ElseBB = Builder.GetInsertBlock();
 
   // Emit Continue Block
   TheFunc->insert(TheFunc->end(), ContBB);
